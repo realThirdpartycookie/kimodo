@@ -55,6 +55,11 @@ class Kimodo(nn.Module):
         self.device = device
         # for classifier-free guidance
 
+        # MPS (Metal) has no float64; downcast double buffers/params before moving.
+        # These are diffusion-schedule and skeleton constants — float32 is plenty.
+        if str(device).startswith("mps"):
+            self._apply(lambda t: t.to(torch.float32) if t.dtype == torch.float64 else t)
+
         self.to(device)
 
     @property

@@ -5,6 +5,7 @@
 import inspect
 import json
 import math
+import os
 import random
 from collections.abc import Mapping, Sequence
 from functools import wraps
@@ -300,6 +301,20 @@ def to_torch(obj, device=None, dtype=None):
             return obj
         return obj.to(device)
     return obj
+
+
+def pick_device() -> str:
+    """Best available torch device: Metal (MPS) on Apple Silicon, else CUDA, else CPU.
+
+    On MPS, enables CPU fallback for the handful of ops Metal doesn't implement so
+    generation degrades gracefully instead of hard-crashing. Override per-component
+    with the existing env vars (e.g. TEXT_ENCODER_DEVICE=cpu)."""
+    if torch.backends.mps.is_available():
+        os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+        return "mps"
+    if torch.cuda.is_available():
+        return "cuda:0"
+    return "cpu"
 
 
 def seed_everything(seed: int, deterministic: bool = False) -> None:

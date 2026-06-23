@@ -16,7 +16,7 @@ from kimodo.assets import DEMO_ASSETS_ROOT
 from kimodo.model.load_model import load_model
 from kimodo.model.registry import resolve_model_name
 from kimodo.skeleton import SkeletonBase, SOMASkeleton30
-from kimodo.tools import load_json
+from kimodo.tools import load_json, pick_device
 from kimodo.viz import viser_utils
 from kimodo.viz.viser_utils import (
     Character,
@@ -54,7 +54,7 @@ from .state import ClientSession, ModelBundle
 
 class Demo:
     def __init__(self, default_model_name: str = DEFAULT_MODEL):
-        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.device = pick_device()
         print(f"Using device: {self.device}")
         self.models: dict[str, ModelBundle] = {}
         self._text_encoder = None
@@ -504,7 +504,10 @@ class Demo:
 
         Trigger auto-restart if corrupted.
         """
-        if self.device == "cpu":
+        # CUDA-only: only CUDA can corrupt this way, and on MPS this periodic op runs on the
+        # render thread concurrently with generation -> Metal command-buffer crash (MPS isn't
+        # thread-safe). Skip for anything that isn't CUDA.
+        if "cuda" not in str(self.device):
             return True
         try:
             torch.tensor([1.0], device=self.device) + torch.tensor([1.0], device=self.device)

@@ -14,7 +14,7 @@ from kimodo.exports.motion_io import save_kimodo_npz
 from kimodo.meta import load_prompts_from_meta
 from kimodo.model.cfg import CFG_TYPES
 from kimodo.model.registry import get_model_info
-from kimodo.tools import load_json, save_json, seed_everything
+from kimodo.tools import load_json, pick_device, save_json, seed_everything
 
 
 def parse_args():
@@ -274,7 +274,7 @@ def get_generation_inputs(args, fps: float):
 
 
 def main():
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = pick_device()
     print(f"Using device: {device}")
 
     args = parse_args()

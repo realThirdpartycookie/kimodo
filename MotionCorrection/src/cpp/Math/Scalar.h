@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <stdint.h>
+#include <cstdlib>  // labs, llabs
 
 //
 // Scalar related methods

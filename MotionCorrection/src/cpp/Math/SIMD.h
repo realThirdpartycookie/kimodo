@@ -6,7 +6,22 @@
 #pragma once
 
 #include <stdint.h>
+#if defined(__aarch64__) || defined(__arm64__)
+// Apple Silicon / ARM: translate x86 SSE intrinsics to NEON via sse2neon.
+#include "sse2neon.h"
+// _mm_permutevar_ps is AVX and not provided by sse2neon; scalar shim (dst[i] = a[ctrl[i] & 3]).
+static inline __m128 _mm_permutevar_ps(__m128 a, __m128i ctrl)
+{
+    float src[4];
+    uint32_t idx[4];
+    _mm_storeu_ps(src, a);
+    _mm_storeu_si128(reinterpret_cast<__m128i*>(idx), ctrl);
+    float dst[4] = { src[idx[0] & 3u], src[idx[1] & 3u], src[idx[2] & 3u], src[idx[3] & 3u] };
+    return _mm_loadu_ps(dst);
+}
+#else
 #include <immintrin.h>
+#endif
 
 namespace SIMD
 {
